@@ -12,7 +12,7 @@ if 'logged_in' not in st.session_state:
 if 'username' not in st.session_state:
     st.session_state['username'] = ""
 
-st.title("🔌 Flask & Streamlit Connect")
+st.title("Flask & Streamlit Connect TEST")
 
 # --- Helper Functions to talk to API ---
 def api_login(username, password):
@@ -33,7 +33,7 @@ def api_register(username, password):
 
 if st.session_state['logged_in']:
     st.success(f"✅ Logged in as: {st.session_state['username']}")
-    st.write("Streamlit is successfully talking to the Flask API.")
+    st.write("Streamlit is successfully talking to the Flask API. TEST ENV!!!!")
     
     if st.button("Logout"):
         st.session_state['logged_in'] = False
