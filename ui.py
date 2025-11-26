@@ -1,75 +1,64 @@
 import streamlit as st
 import requests
+import json
 
-# The address where your api.py is running
 API_URL = "http://127.0.0.1:5000"
 
-st.set_page_config(page_title="Flask + Streamlit App")
+st.set_page_config(page_title="OOP Login System")
 
-# Initialize Session State
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
 if 'username' not in st.session_state:
     st.session_state['username'] = ""
 
-st.title("🔌 Flask & Streamlit Connect")
+st.title("🛡️ Professional OOP Login")
 
-# --- Helper Functions to talk to API ---
-def api_login(username, password):
+def api_request(endpoint, username, password):
     try:
-        resp = requests.post(f"{API_URL}/login", json={"username": username, "password": password})
-        return resp.json()
+        response = requests.post(
+            f"{API_URL}/{endpoint}", 
+            json={"username": username, "password": password}
+        )
+        # Try to parse JSON. If it fails, it means the server crashed.
+        try:
+            return response.json()
+        except json.JSONDecodeError:
+            # Return the raw error text from the server
+            return {"success": False, "message": f"Server Error (Not JSON): {response.text}"}
+            
     except requests.exceptions.ConnectionError:
-        return {"success": False, "message": "Error: Flask API is not running."}
-
-def api_register(username, password):
-    try:
-        resp = requests.post(f"{API_URL}/register", json={"username": username, "password": password})
-        return resp.json()
-    except requests.exceptions.ConnectionError:
-        return {"success": False, "message": "Error: Flask API is not running."}
+        return {"success": False, "message": "🚨 Connection Error: Is api.py running?"}
 
 # --- App Logic ---
 
 if st.session_state['logged_in']:
-    st.success(f"✅ Logged in as: {st.session_state['username']}")
-    st.write("Streamlit is successfully talking to the Flask API.")
-    
+    st.success(f"Welcome, {st.session_state['username']}!")
     if st.button("Logout"):
         st.session_state['logged_in'] = False
         st.rerun()
-
 else:
     tab1, tab2 = st.tabs(["Login", "Register"])
-
-    # Login Tab
+    
     with tab1:
-        st.subheader("Login via API")
-        with st.form("login_form"):
-            user = st.text_input("Username")
-            pw = st.text_input("Password", type="password")
-            btn = st.form_submit_button("Login")
-
-            if btn:
-                result = api_login(user, pw)
-                if result['success']:
+        with st.form("login"):
+            u = st.text_input("Username")
+            p = st.text_input("Password", type="password")
+            if st.form_submit_button("Login"):
+                res = api_request("login", u, p)
+                if res['success']:
                     st.session_state['logged_in'] = True
-                    st.session_state['username'] = user
+                    st.session_state['username'] = u
                     st.rerun()
                 else:
-                    st.error(result['message'])
+                    st.error(res['message'])
 
-    # Register Tab
     with tab2:
-        st.subheader("Register via API")
-        with st.form("reg_form"):
-            new_user = st.text_input("New Username")
-            new_pw = st.text_input("New Password", type="password")
-            reg_btn = st.form_submit_button("Register")
-
-            if reg_btn:
-                result = api_register(new_user, new_pw)
-                if result['success']:
-                    st.success(result['message'])
+        with st.form("reg"):
+            u = st.text_input("Username")
+            p = st.text_input("Password", type="password")
+            if st.form_submit_button("Register"):
+                res = api_request("register", u, p)
+                if res['success']:
+                    st.success(res['message'])
                 else:
-                    st.error(result['message'])
+                    st.error(res['message'])
