@@ -1,37 +1,48 @@
 from flask import Flask, request, jsonify
 from database import Database
 from auth import AuthManager
+from analytics import calculate_risk
 
 app = Flask(__name__)
-
-# --- OOP Initialization ---
-# 1. Create the Database instance
-db = Database("users.db")
-
-# 2. Create the AuthManager and inject the database into it
+db = Database("wellbeing.db")
 auth_system = AuthManager(db)
-
-
-@app.route('/', methods=['GET'])
-def home():
-    return jsonify({"status": "active", "architecture": "MVC OOP"}), 200
-
-@app.route('/register', methods=['POST'])
-def register():
-    data = request.get_json()
-    success, message = auth_system.register(data.get('username'), data.get('password'))
-    
-    status_code = 201 if success else 400
-    return jsonify({"success": success, "message": message}), status_code
 
 @app.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
-    success, message = auth_system.login(data.get('username'), data.get('password'))
-    
-    status_code = 200 if success else 401
-    return jsonify({"success": success, "message": message}), status_code
+    success, message, role = auth_system.login(data.get('username'), data.get('password'))
+    return jsonify({"success": success, "message": message, "role": role})
+
+@app.route('/register', methods=['POST'])
+def register():
+    data = request.get_json()
+    success, message = auth_system.register(data.get('username'), data.get('password'), role=data.get('role', 'staff'))
+    return jsonify({"success": success, "message": message})
+
+@app.route('/generate_data', methods=['POST'])
+def generate_data():
+    db.generate_synthetic_data()
+    return jsonify({"success": True, "message": "Synthetic Data Created"})
+
+@app.route('/dashboard', methods=['GET'])
+def get_dashboard():
+    students = db.get_student_averages()
+    results = []
+    for s in students:
+        risk = calculate_risk(s['avg_stress'], s['avg_sleep'])
+        results.append({
+            "name": s['name'],
+            "id": s['id'],
+            "avg_stress": round(s['avg_stress'], 2),
+            "status": risk['status'],
+            "reason": risk['reason']
+        })
+    return jsonify(results)
+
+@app.route('/student/<int:student_id>', methods=['GET'])
+def get_student_details(student_id):
+    history = db.get_student_history(student_id)
+    return jsonify(history)
 
 if __name__ == '__main__':
-    print("Running OOP Flask API on http://127.0.0.1:5000")
     app.run(debug=True, port=5000)
