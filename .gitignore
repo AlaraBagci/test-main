@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+.env/
+.venv/
+
+# VSCode folders
+.vscode/
+
+# Environment variables
+.env
+*.env
+
+# Compiled files
+*.so
+
+# Logs
+*.log
